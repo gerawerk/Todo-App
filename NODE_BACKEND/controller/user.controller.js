@@ -1,52 +1,60 @@
 const UserServices = require('../services/user.services');
+const User = require('../models/user.model');
 
-// Register controller
-exports.register = async (req, res, next) => {
+exports.register = async (req, res) => {
   try {
-    console.log("---req body---", req.body);
     const { email, password } = req.body;
 
-    const duplicate = await UserServices.getUserByEmail(email);
-    if (duplicate) {
-      throw new Error(`User ${email} is already registered`);
+    // Check if user already exists
+    const existingUser = await UserServices.getUserByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    const response = await UserServices.registerUser(email, password);
+    // Register new user (includes hashing inside the service)
+    const newUser = await UserServices.registerUser({ email, password });
 
-    res.status(201).json({ status: true, success: 'User registered successfully' });
-  } catch (err) {
-    console.log("---> err -->", err);
-    res.status(400).json({ status: false, message: err.message });
+    return res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        _id: newUser._id,
+        email: newUser.email,
+      }
+    });
 
-    next(err);
+  } catch (error) {
+    console.error('---> err -->', error);
+    return res.status(500).json({ message: "Registration failed", error: error.message });
   }
 };
 
-exports.login = async (req, res, next) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log('Login attempt:', { email, password });
 
     if (!email || !password) {
-      throw new Error('Parameters are not correct');
+      return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await UserServices.checkUser(email);
-    if (!user) {
-      throw new Error('User does not exist');
-    }
+    // Verify credentials
+    const user = await UserServices.verifyCredentials(email, password);
 
-    const isPasswordCorrect = await user.comparePassword(password);
-    if (!isPasswordCorrect) {
-      throw new Error('Username or password does not match');
-    }
+    // Generate JWT tokens
+    const tokens = UserServices.generateTokens(user);
 
-    const tokenData = { _id: user._id, email: user.email };
-    const token = await UserServices.generateAccessToken(tokenData, "secret", "1h");
+    res.status(200).json({
+      message: "Login successful",
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        _id: user._id,
+        email: user.email
+      }
+    });
 
-    res.status(200).json({ status: true, success: "Login successful", token });
   } catch (error) {
-    console.log("err ---->", error);
-    res.status(500).json({ status: false, error: error.message });
+    console.error("Login error:", error);
+    res.status(401).json({ message: error.message });
   }
 };
