@@ -1,30 +1,26 @@
-# todo
+# Todo-App
 
-A new Flutter project.
+A simple Todo application built using **Flutter** for the frontend and **Node.js** with **MongoDB** for the backend.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application that follows the
-[simple app state management   
-tutorial](https://flutter.dev/docs/development/data-and-backend/state-mgmt/simple).
+- Create, read, update, and delete tasks.
+- Mark tasks as completed.
+- Categorize tasks by priority.
+- Responsive design for both Android and iOS.
+- User authentication and session management.
+- Persistent data storage with MongoDB.
 
-For help getting started with Flutter development, view the
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Technologies Used
 
-## Assets
+- **Frontend**: Flutter
+- **Backend**: Node.js (Express.js)
+- **Database**: MongoDB
 
-The `assets` directory houses images, fonts, and any other files you want to
-include with your application.
+## Installation
 
-The `assets/images` directory contains [resolution-aware
-images](https://flutter.dev/docs/development/ui/assets-and-images#resolution-aware).
+To run this project locally, follow these steps:
 
-## Localization
-
-This project generates localized messages based on arb files found in
-the `lib/src/localization` directory.
-
-To support additional languages, please visit the tutorial on
-[Internationalizing Flutter
-apps](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
+### 1. Clone the repository:
+```bash
+git clone https://github.com/gerawerk/Todo-App.git
