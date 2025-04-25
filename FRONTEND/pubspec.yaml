@@ -17,7 +17,10 @@ dependencies:
   http: ^1.2.1
   jwt_decoder: ^2.0.1
   flutter_slidable: ^4.0.0
-  velocity_x: ^4.3.1
+  velocity_x: ^4.2.1
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:

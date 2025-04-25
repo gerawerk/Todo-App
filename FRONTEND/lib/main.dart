@@ -1,34 +1,32 @@
-//Asmamaw Kassahun   BDU1404416
-
-
 import 'package:flutter/material.dart';
-import 'package:todo/dashboard.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'loginPage.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+
+import 'dashboard.dart';
+import 'login_page.dart.dart';
+
 void main() async {
-WidgetsFlutterBinding.ensureInitialized();
-SharedPreferences prefs = await
-SharedPreferences.getInstance();
-runApp(MyApp(token: prefs.getString('token'),));
+  WidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? token = prefs.getString('token');
+  runApp(MyApp(token: token));
 }
+
 class MyApp extends StatelessWidget {
-final token;
-const MyApp({
-@required this.token,
-Key? key,
-}): super(key: key);
-@override
-Widget build(BuildContext context) {
-return MaterialApp(
-title: 'Flutter Demo',
-debugShowCheckedModeBanner: false,
-theme: ThemeData(
-primaryColor: Colors.black,
-visualDensity: VisualDensity.adaptivePlatformDensity,
-),
-home: (token != null && JwtDecoder.isExpired(token) ==
-false )?Dashboard(token: token):SignInPage()
-);
-}
+  final String? token;
+  const MyApp({super.key, required this.token});
+
+  bool isValidToken(String? token) {
+    return token != null && !JwtDecoder.isExpired(token);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'TODO App',
+      theme: ThemeData(primarySwatch: Colors.deepOrange),
+      home: isValidToken(token) ? Dashboard(token: token!) : SignInPage(),
+    );
+  }
 }

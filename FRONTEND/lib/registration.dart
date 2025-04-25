@@ -1,162 +1,108 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:velocity_x/velocity_x.dart';
-import 'applogo.dart';
-import 'loginPage.dart';
 import 'package:http/http.dart' as http;
+import 'login_page.dart.dart';  // Ensure this import is correct
 import 'config.dart';
 
 class Registration extends StatefulWidget {
+  const Registration({super.key});
+
   @override
-  _RegistrationState createState() => _RegistrationState();
+  RegistrationState createState() => RegistrationState();
 }
 
-class _RegistrationState extends State<Registration> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  bool _isNotValidate = false;
-  
-  void registerUser() async {
-    print("Register button pressed");
-    if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
-      var regBody = {
-        "email": emailController.text,
-        "password": passwordController.text
-      };
-      var response = await http.post(Uri.parse(registration),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(regBody));
-      print(response.statusCode);
-      var jsonResponse = jsonDecode(response.body);
-      print(jsonResponse['status']);
-      if (jsonResponse['status']) {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => SignInPage()));
+class RegistrationState extends State<Registration> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse(ApiEndpoints.registration),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+        }),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 && responseData['status']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration successful!')),
+        );
+        
+        // Replace the current page (registration) with the login page (SignInPage)
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => SignInPage()), // Navigate to login page
+        );
       } else {
-        print("SomeThing Went Wrong");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(responseData['message'] ?? 'Registration failed')),
+        );
       }
-    } else {
-      setState(() {
-        _isNotValidate = true;
-      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-                colors: [const Color(0XFFF95A3B), const Color(0XFFF96713)],
-                begin: FractionalOffset.topLeft,
-                end: FractionalOffset.bottomCenter,
-                stops: [0.0, 0.8],
-                tileMode: TileMode.mirror),
-          ),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  CommonLogo(),
-                  HeightBox(10),
-                  "CREATE YOURACCOUNT".text.size(22).yellow100.make(),
-                  TextField(
-                    controller: emailController,
-                    keyboardType: TextInputType.text,
-                    decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        errorStyle: TextStyle(color: Colors.white),
-                        errorText: _isNotValidate ? "EnterProper Info" : null,
-                        hintText: "Email",
-                        border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)))),
-                  ).p4().px24(),
-                  TextField(
-                    controller: passwordController,
-                    keyboardType: TextInputType.text,
-                    decoration: InputDecoration(
-                        suffixIcon: IconButton(
-                          icon: Icon(Icons.copy),
-                          onPressed: () {
-                            final data =
-                                ClipboardData(text: passwordController.text);
-                            Clipboard.setData(data);
-                          },
-                        ),
-                        prefixIcon: IconButton(
-                          icon: Icon(Icons.password),
-                          onPressed: () {
-                            String passGen = generatePassword();
-                            passwordController.text = passGen;
-                            setState(() {});
-                          },
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        errorStyle: TextStyle(color: Colors.white),
-                        errorText: _isNotValidate ? "EnterProper Info" : null,
-                        hintText: "Password",
-                        border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)))),
-                  ).p4().px24(),
-                  HStack([
-                    GestureDetector(
-                      onTap: () => {registerUser()},
-                      child: VxBox(
-                              child: "Register".text.white.makeCentered().p16())
-                          .green600
-                          .roundedLg
-                          .make()
-                          .px16()
-                          .py16(),
-                    ),
-                  ]),
-                  GestureDetector(
-                    onTap: () {
-                      print("Sign In");
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => SignInPage()));
-                    },
-                    child: HStack([
-                      "Already Registered?".text.make(),
-                      " Sign In".text.white.make()
-                    ]).centered(),
-                  )
-                ],
+    return Scaffold(
+      appBar: AppBar(title: Text('Register')),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Create Account',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              SizedBox(height: 24),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter email' : null,
               ),
-            ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter password' : null,
+              ),
+              SizedBox(height: 32),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _register,
+                      child: Text('Register'),
+                    ),
+            ],
           ),
         ),
       ),
     );
   }
-}
-
-String generatePassword() {
-  String upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  String lower = 'abcdefghijklmnopqrstuvwxyz';
-  String numbers = '1234567890';
-  String symbols = '!@#\$%^&*()<>,./';
-  String password = '';
-  int passLength = 20;
-  String seed = upper + lower + numbers + symbols;
-  List<String> list = seed.split('').toList();
-  Random rand = Random();
-  for (int i = 0; i < passLength; i++) {
-    int index = rand.nextInt(list.length);
-    password += list[index];
-  }
-  return password;
 }
